@@ -1,7 +1,7 @@
 import Swagger from 'swagger-client';
 
 export default (opts) => () => next => action => {
-  const { swagger, types, ...rest } = action; // eslint-disable-line no-redeclare
+  const { swagger, types, ...rest } = action;
   const [REQUEST, SUCCESS, FAILURE] = types;
   const waitQueue = [];
   let ready = false;
@@ -38,7 +38,7 @@ export default (opts) => () => next => action => {
     } else {
       // Call payload and pass the swagger client
       callApi(client)(action.swagger);
-      return next(action);
+      return next({ ...rest, type: REQUEST });
     }
   } else {
     return next(action);
