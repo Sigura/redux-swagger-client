@@ -7,7 +7,7 @@ export default function swaggerMiddleware(opts) {
     .then(
       result => {
         client = result;
-        console.log('swaggerMiddleware:inited', result, client);
+        //console.log('swaggerMiddleware:inited', result, client);
 
         while (waitQueue.length) {
           const a = waitQueue.shift();
@@ -28,7 +28,7 @@ export default function swaggerMiddleware(opts) {
     const { swagger, types, ...rest } = action;
     const [REQUEST, SUCCESS, FAILURE] = types;
     const callApi = (c, sw) => {
-      console.log('swaggerMiddleware:callApi', c, sw, action);
+      // console.log('swaggerMiddleware:callApi', c, sw, action);
       return typeof sw === 'function'
         ? sw(c)
           .then(
@@ -40,7 +40,7 @@ export default function swaggerMiddleware(opts) {
           })
         : console.error('Swagger api call is not a function')
     };
-    console.log('swaggerMiddleware: got it!', client, waitQueue);
+    // console.log('swaggerMiddleware: got it!', client, waitQueue);
 
     // Add async api calls to queue if not ready
     if (!client) {
