@@ -1,6 +1,22 @@
 import Swagger from 'swagger-client';
 
 export default function swaggerMiddleware(opts) {
+  const waitQueue = [];
+  let client;
+  new Swagger(opts)
+    .then(
+      result => {
+        client = result;
+        console.log('swaggerMiddleware:inited', result, client);
+
+        while (waitQueue.length) {
+          const a = waitQueue.shift();
+          a(client.apis);
+        }
+      },
+      err => console.error('swaggerMiddleware:inited2', err)
+    ).catch(err => console.error('swaggerMiddleware:inited1', err));
+
   return ({ dispatch, getState }) => next => action => {
     if (typeof action === 'function') {
       return action(dispatch, getState);
@@ -11,11 +27,10 @@ export default function swaggerMiddleware(opts) {
     }
     const { swagger, types, ...rest } = action;
     const [REQUEST, SUCCESS, FAILURE] = types;
-    const waitQueue = [];
-    let ready = false;
-    const callApi = client => sw => (
-      typeof swagger === 'function'
-        ? sw(client)
+    const callApi = (c, sw) => {
+      console.log('swaggerMiddleware:callApi', c, sw, action);
+      return typeof sw === 'function'
+        ? sw(c)
           .then(
             (result) => next({ ...rest, result, type: SUCCESS }),
             (error) => next({ ...rest, error, type: FAILURE })
@@ -24,27 +39,19 @@ export default function swaggerMiddleware(opts) {
             next({ ...rest, error, type: FAILURE });
           })
         : console.error('Swagger api call is not a function')
-      );
-
-    const client = new Swagger({
-      ...opts,
-      success: () => {
-        ready = true
-        while (waitQueue.length) {
-          const a = waitQueue.shift();
-          next({ ...rest, type: REQUEST });
-          callApi(client)(a.swagger);
-        }
-      }
-    });
+    };
+    console.log('swaggerMiddleware: got it!', client, waitQueue);
 
     // Add async api calls to queue if not ready
-    if (!ready) {
-      waitQueue.push(action);
+    if (!client) {
+      waitQueue.push((c) => {
+        next({ ...rest, type: REQUEST });
+        callApi(c, swagger);
+      });
     } else {
       // Call payload and pass the swagger client
       next({ ...rest, type: REQUEST });
-      return callApi(client)(action.swagger);
+      return callApi(client.apis, swagger);
     }
 
     return undefined;
