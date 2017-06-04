@@ -48,4 +48,3 @@ export default function swaggerMiddleware(opts) {
     ).catch(err => opts.error && opts.error(err));
   }
 }
-
